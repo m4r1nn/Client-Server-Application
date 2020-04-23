@@ -19,7 +19,7 @@ void resolve_read_stdin(fd_set& read_fds, int fdmax) {
 
 // for receiving more clients
 void resolve_tcp_connection(int sockfd, fd_set &read_fds, int& fdmax,
-    std::unordered_map<int, struct tcp_client>& tcp_clients, std::unordered_map<int, int>& fd_to_id) {
+    std::unordered_map<std::string, struct tcp_client>& tcp_clients, std::unordered_map<int, std::string>& fd_to_id) {
     
     struct sockaddr_in tcp_cli_addr;
     socklen_t len = sizeof(tcp_cli_addr);
@@ -40,8 +40,8 @@ void resolve_tcp_connection(int sockfd, fd_set &read_fds, int& fdmax,
     int received = recv(tcp_client_fd, buffer, BUFFLEN, 0);
     DIE(received < 0, "no id received");
 
-    int id = atoi(buffer);
-    DIE(id < 0, "atoi");
+    std::string id(buffer);
+    DIE(id.size() > 10, "invallid id");
 
     // check if client was conneted before
     if (tcp_clients.find(id) == tcp_clients.end()) {
@@ -85,7 +85,7 @@ void resolve_tcp_connection(int sockfd, fd_set &read_fds, int& fdmax,
 
 // for receivind and posting news from udp clients
 void resolve_udp_interaction(int sockfd, int con_tcp_sockfd, struct sockaddr_in& serv_addr,
-    std::unordered_map<int, struct tcp_client>& tcp_clients) {
+    std::unordered_map<std::string, struct tcp_client>& tcp_clients) {
     
     socklen_t len;
 
@@ -99,39 +99,55 @@ void resolve_udp_interaction(int sockfd, int con_tcp_sockfd, struct sockaddr_in&
     std::string to_forward(inet_ntoa(serv_addr.sin_addr));
     to_forward += (":" + std::to_string(ntohs(serv_addr.sin_port)) + " - ");
 
-    std::string result(buffer);
-    if (result.size() > 0) {
-        result.pop_back();
-    }
-
     // get topic name
-    std::string topic_name = result.substr(0, result.find(' '));
-    to_forward += (topic_name + " - ");
-    result = result.substr(result.find(' ') + 1);
+    char topic_name_chr[51];
+    memcpy(topic_name_chr, buffer, 50);
+    topic_name_chr[50] = '\0';
+    std::string topic_name(topic_name_chr);
 
-    char data_temp[SMALL_BUFF];
-    strcpy(data_temp, result.substr(0, result.find(' ')).c_str());
+    // get data type
+    uint8_t data_type_chr = (uint8_t) buffer[50];
+    uint32_t data_type = data_type_chr;
 
-    // check data type
-    int data_type = atoi(data_temp);
-    switch (data_type) {
-        case 0:
-            to_forward += "INT - ";
-            break;
-        case 1:
-            to_forward += "SHORT_REAL - ";
-            break;
-        case 2:
-            to_forward += "FLOAT - ";
-            break;
-        case 3:
-            to_forward += "STRING - ";
-            break;
-        default:
-            DIE(true, "invalid data type");
+    // get the rest of payload
+    if (data_type == 0) {
+        to_forward += "INT - ";
+        uint8_t sign = buffer[51];
+        if (sign == 0) {
+            to_forward += '+';
+        } else if (sign == 1) {
+            to_forward += '-';
+        }
+        uint32_t number32;
+        memcpy(&number32, buffer + 52, sizeof(uint32_t));
+        number32 = ntohl(number32);
+        to_forward +=  std::to_string(number32);
+    } else if (data_type == 1) {
+        uint16_t number16;
+        memcpy(&number16, buffer + 51, sizeof(uint16_t));
+        number16 = ntohs(number16);
+        float number16_float = ((float) number16) / 100;
+        to_forward += std::to_string(number16_float);
+    } else if (data_type == 2) {
+        to_forward += "FLOAT - ";
+        uint8_t sign = buffer[51];
+        if (sign == 0) {
+            to_forward += '+';
+        } else if (sign == 1) {
+            to_forward += '-';
+        }
+        uint32_t base;
+        memcpy(&base, buffer +  52, sizeof(int));
+        base = ntohl(base);
+        char exp = buffer[56];
+        float number32_float = ((float) base) * pow(10, -exp);
+        to_forward += std::to_string(number32_float);
+    } else if (data_type == 3) {
+        std::string payload(buffer + 51);
+        to_forward += "STRING - " + payload;
+    } else {
+        DIE(true, "invalid data type");
     }
-    result = result.substr(result.find(' ') + 1);
-    to_forward += result;
 
     memset(buffer, 0, BUFFLEN);
     strcpy(buffer, to_forward.c_str());
@@ -160,7 +176,7 @@ void resolve_udp_interaction(int sockfd, int con_tcp_sockfd, struct sockaddr_in&
 
 // for checking subscribe and unsubscribe messages from tcp clients
 void resolve_tcp_interaction(int sockfd, fd_set& read_fds,
-    std::unordered_map<int, struct tcp_client>& tcp_clients, std::unordered_map<int, int>& fd_to_id) {
+    std::unordered_map<std::string, struct tcp_client>& tcp_clients, std::unordered_map<int, std::string>& fd_to_id) {
 
     // get request
     char buffer[BUFFLEN];

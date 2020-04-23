@@ -20,20 +20,15 @@ void resolve_read_stdin(int sockfd, fd_set& read_fds) {
     }
 
     // check message type --- subscribe or unsubscribe
-    if (strncmp(buffer, "subscribe", 9) == 0 || strncmp(buffer, "unsubscribe", 11) == 0) {
-        std::string message_type = message.substr(0, message.find(' '));
-        message = message.substr(message.find(' ') + 1);
-        std::string topic_name = message.substr(0, message.find(' '));
+    DIE(strncmp(buffer, "subscribe", 9) != 0 && strncmp(buffer, "unsubscribe", 11) != 0, "invalid command");
+    std::string message_type = message.substr(0, message.find(' '));
+    message = message.substr(message.find(' ') + 1);
+    std::string topic_name = message.substr(0, message.find(' '));
 
-        int send_check = send(sockfd, buffer, strlen(buffer), 0);
-        DIE(send_check < 0, "send");
+    int send_check = send(sockfd, buffer, strlen(buffer), 0);
+    DIE(send_check < 0, "send");
 
-        std::cout << message_type << "d " << topic_name << std::endl;
-
-    } else {
-        int send_check = send(sockfd, buffer, strlen(buffer), 0);
-        DIE(send_check < 0, "send"); 
-    }
+    std::cout << message_type << "d " << topic_name << std::endl;
 }
 
 // for receiving news

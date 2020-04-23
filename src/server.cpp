@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
     fd_set temp_fds;
     
     // for searching clients by id
-    std::unordered_map<int, struct tcp_client> tcp_clients;
+    std::unordered_map<std::string, struct tcp_client> tcp_clients;
 
     // for searching clients' ids by socket they are connected
-    std::unordered_map<int, int> fd_to_id;
+    std::unordered_map<int, std::string> fd_to_id;
 
     // initialize descriptors 'arrays'
     FD_ZERO(&read_fds);
@@ -50,6 +50,10 @@ int main(int argc, char* argv[]) {
     FD_SET(con_tcp_sockfd, &read_fds);
     FD_SET(con_udp_sockfd, &read_fds);
     int fdmax = std::max(STDIN_FILENO, std::max(con_tcp_sockfd, con_udp_sockfd));
+
+    int yes = 1;
+    int no_delay_check = setsockopt(con_tcp_sockfd, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
+    DIE(no_delay_check < 0, "tcp no delay");
 
     std::cout << "server started working" << std::endl;
 

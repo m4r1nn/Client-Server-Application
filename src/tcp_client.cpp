@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
     
-    DIE(argc < 3, "wrong call client");
+    DIE(argc < 4, "wrong call client");
 
     // descriptors 'arrays'
     fd_set read_fds;
@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     DIE(sockfd < 0, "socket");
 
-    int port = atoi(argv[2]);
+    int port = atoi(argv[3]);
     DIE(port <= 0, "invalid port");
 
     // set socket for server interaction
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     memset(&serv_addr, 0, sizeof(struct sockaddr_in));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
-    int addr_check = inet_aton(argv[1], &serv_addr.sin_addr);
+    int addr_check = inet_aton(argv[2], &serv_addr.sin_addr);
     DIE(addr_check == 0, "invalid ip");
 
     // add main descriptors to 'array'
@@ -35,8 +35,15 @@ int main(int argc, char* argv[]) {
     int connect_check = connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(struct sockaddr));
     DIE(connect_check < 0, "conect");
 
-    std::cout << "insert id: ";
-    fflush(stdout);
+    int id = atoi(argv[1]);
+    DIE(id < 0, "atoi");
+
+    // send id to server
+    char buffer[BUFFLEN];
+    memset(buffer, 0, BUFFLEN);
+    memcpy(buffer, argv[1], strlen(argv[1]));    
+    int send_check = send(sockfd, buffer, strlen(buffer), 0);
+    DIE(send_check < 0, "send"); 
 
     // run client
     while (true) {
