@@ -42,6 +42,10 @@ void resolve_server_interaction(int sockfd) {
 
     // print all news from susbcribed topics
     std::string message(buffer);
+    if (message == "exit") {
+        close(sockfd);
+        exit(0);
+    }
     while (message.find('#') != std::string::npos) {
         std::cout << message.substr(0, message.find('#')) << std::endl;
         message = message.substr(message.find('#') + 1);

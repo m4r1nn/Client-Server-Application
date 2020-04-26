@@ -70,7 +70,9 @@ int main(int argc, char* argv[]) {
 
                 // read from stdin
                 if (i == STDIN_FILENO) {
-                    resolve_read_stdin(read_fds, fdmax);
+                    if (resolve_read_stdin(read_fds, fdmax, tcp_clients) == false) {
+                        return 0;
+                    }
 
                 // receive more tcp clients
                 } else if (i == con_tcp_sockfd) {
@@ -89,7 +91,6 @@ int main(int argc, char* argv[]) {
     }
 
     // close all descriptors
-    close_server(read_fds, fdmax);
-
+    close_server(read_fds, fdmax, tcp_clients);
     return 0;
 }
