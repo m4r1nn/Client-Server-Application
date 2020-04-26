@@ -1,1 +1,79 @@
-TODO
+ 
+#Burcea Marian Gabriel --- Client Server Application
+
+    The project implements a simple client-server application with interaction
+of both sides. application consists into three parts:
+ - a subscriber (tcp client) who uses TCP protocol to communicate with server
+ (strong connection between them);
+ - an udp client based on UDP protocol (weak connection, the only interactions
+ between them and server are the sent messages);
+ - a server who manages the whole application on itself, provides data
+ transmission from udp clents (publishers) to subscribers and handles possible
+ errors than can appear;
+
+Functionality:
+    An udp client (or more) publishes a message from a certain topic and all
+tcp clients that are subscribed to that topic will receive the message. Tcp
+clients can subscribe and unsubscribe to more topics. A subscriber can choose
+for a topic "store and forward" option which stores unsent messages while he
+has been deisconnected and receive all when he connects again.
+    Clients are recognized by ids (string max 10 characters), not by sockets
+descriptors, so a subscriber who disconnects and connected back with same id,
+from other socket is not treated as a new client. Disconnected clients are
+differentiated from connected clients by active field from <tcp_client>
+structure.
+
+    ***** SERVER *****
+    It uses two main unordered maps (hashtables) to store the client-fd ->
+client-id and client-id -> client links. These maps enable the searches for
+client to be made in O(1) temporal complexity, insted of o(n). The sever
+initially establishes 2 main connections with tcp listen socket and with udp
+channel (weak) and disable neagle algorithm . As he is running, one of the
+following operations can happen:
+    - read from stdin command "exit", that will stop the server and disconnect
+    all subscribers; other command is not permitted;
+    - accept a tcp connection, from a subscriber: if the client is new,
+    the 2 hashtables are filled with his data and he is added together with
+    the others, a new fd -> id entry is added to map too; if subscriber was
+    connected before, he just updates his status to active, change his socket,
+    and receives the unsent messages from topics he is subscribed to; the
+    fd -> id specific entry also updates;
+    - receive a message (publication) from an udp client: decode the message
+    that arrived in a given form (it can be one of the following types: INT32,
+    SHORT_REAL, FLOAT, STRING; every type has its specific encoding); the
+    server searches in clents map, send message to all active clients
+    subscribed to that topic and store it for all inactive clients with
+    "store and forward" set on that topic;
+    - receive message from tcp_clients:
+        * <subscribe> type: add the new topic to the client subscribed topics
+        * <unsubscribe> type: remove that topic from client subscribed topics
+        * empty buffer: client dissconected; sets his status on inactive;
+    
+    ***** SUBSCRIBERS *****
+    Initially, a subscriber establish the connection with server. Immediately
+after that, it send a message to server with his id, so that the server can
+work with him. 2 operations can happen with the subscriber:
+    - read from stdin a subscribe, unsubscribe or exit command and send it
+    to server;
+    - receive from server an udp publication, fragment it if necessary and
+    print;
+    
+    ***** UDP_CLIENTS *****
+    At first, they establish a weak connection (bind) with server and start
+publishing (sending) messages from different topics (read from stdin). They
+don't stop when server does.
+
+Special notes:
+    - Makefile use:
+        * make build: obtain server, subscriber, udp_client executable files;
+        * make server: obtain server file;
+        * make subscriber: obtain subscriber file;
+        * make udp_client: obtain udp_client;
+        * make clean: remove all bunary and object files created;
+    - server use: ./server <port>
+    - subscriber use: ./subscriber <id> <ip> <port>
+    - udp_client use: ./udp_client <ip> <port>
+    - when a subscriber reconnects if he has 'to receive' messages, they are
+    concatenated to form a bigger message and that is sent to client, who
+    fragments back the message and print the initial parts; messages are
+    concatenated by '#' separator;

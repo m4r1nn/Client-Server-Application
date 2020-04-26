@@ -1,5 +1,5 @@
-#ifndef TCP_CLIENT_HELPERS_H_
-#define TCP_CLIENT_HELPERS_H_
+#ifndef SUBSCRIBER_HELPERS_H_
+#define SUBSCRIBER_HELPERS_H_
 
 #include "./other_helpers.h"
 

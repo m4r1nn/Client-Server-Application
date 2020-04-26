@@ -51,8 +51,8 @@ int main(int argc, char* argv[]) {
     FD_SET(con_udp_sockfd, &read_fds);
     int fdmax = std::max(STDIN_FILENO, std::max(con_tcp_sockfd, con_udp_sockfd));
 
-    int yes = 1;
-    int no_delay_check = setsockopt(con_tcp_sockfd, IPPROTO_TCP, TCP_NODELAY, (char*) &yes, sizeof(int));
+    int value = 1;
+    int no_delay_check = setsockopt(con_tcp_sockfd, IPPROTO_TCP, TCP_NODELAY, (char*) &value, sizeof(int));
     DIE(no_delay_check < 0, "tcp no delay");
 
     std::cout << "server started working" << std::endl;
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 
                 // read from stdin
                 if (i == STDIN_FILENO) {
-                    if (resolve_read_stdin(read_fds, fdmax, tcp_clients) == false) {
+                    if (resolve_read_stdin(read_fds, fdmax) == false) {
                         return 0;
                     }
 
@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
     }
 
     // close all descriptors
-    close_server(read_fds, fdmax, tcp_clients);
+    close_server(read_fds, fdmax);
+    
     return 0;
 }

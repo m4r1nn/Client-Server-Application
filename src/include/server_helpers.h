@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <cmath>
 
-#define MAX_CLIENTS 20
+#define MAX_CLIENTS 100
 
 // for storing topics that clients are subscribed to
 struct topic {
@@ -35,13 +35,13 @@ struct tcp_client {
     bool active;
 };
 
-bool resolve_read_stdin(fd_set& read_fds, int fdmax, std::unordered_map<std::string, struct tcp_client>& tcp_clients);
+bool resolve_read_stdin(fd_set& read_fds, int fdmax);
 void resolve_tcp_connection(int sockfd, fd_set &read_fds, int& fdmax,
     std::unordered_map<std::string, struct tcp_client>& tcp_clients, std::unordered_map<int, std::string>& fd_to_id);
 void resolve_udp_interaction(int sockfd, int con_tcp_sockfd, struct sockaddr_in& serv_addr,
     std::unordered_map<std::string, struct tcp_client>& tcp_clients);
 void resolve_tcp_interaction(int sockfd, fd_set& read_fds,
     std::unordered_map<std::string, struct tcp_client>& tcp_clients, std::unordered_map<int, std::string>& fd_to_id);
-void close_server(fd_set &read_fds, int fdmax, std::unordered_map<std::string, struct tcp_client>& tcp_clients);
+void close_server(fd_set &read_fds, int fdmax);
 
 #endif

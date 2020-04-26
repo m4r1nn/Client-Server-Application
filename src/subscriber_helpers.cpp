@@ -1,4 +1,4 @@
-#include "./include/tcp_client_helpers.h"
+#include "./include/subscriber_helpers.h"
 
 // for reading commands from stdin
 void resolve_read_stdin(int sockfd, fd_set& read_fds) {
@@ -42,7 +42,7 @@ void resolve_server_interaction(int sockfd) {
 
     // print all news from susbcribed topics
     std::string message(buffer);
-    if (message == "exit") {
+    if (received == 0) {
         close(sockfd);
         exit(0);
     }

@@ -16,7 +16,7 @@
 		}									\
 	} while(0)
 
-#define BUFFLEN 1600
+#define BUFFLEN 100000
 #define SMALL_BUFF 10
 
 #endif

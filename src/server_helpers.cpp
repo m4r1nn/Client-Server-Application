@@ -1,7 +1,7 @@
 #include "./include/server_helpers.h"
 
 // for reading commands from server admin
-bool resolve_read_stdin(fd_set& read_fds, int fdmax, std::unordered_map<std::string, struct tcp_client>& tcp_clients) {
+bool resolve_read_stdin(fd_set& read_fds, int fdmax) {
     
     // get command
     char buffer[BUFFLEN];
@@ -11,7 +11,7 @@ bool resolve_read_stdin(fd_set& read_fds, int fdmax, std::unordered_map<std::str
 
     // close server
     if (strncmp(buffer, "exit", 4) == 0) {
-        close_server(read_fds, fdmax, tcp_clients);
+        close_server(read_fds, fdmax);
         return false;
     } else {
         std::cout << "wrong command" << std::endl;
@@ -248,13 +248,9 @@ void resolve_tcp_interaction(int sockfd, fd_set& read_fds,
 }
 
 // for closing the server
-void close_server(fd_set &read_fds, int fdmax, std::unordered_map<std::string, struct tcp_client>& tcp_clients) {
+void close_server(fd_set &read_fds, int fdmax) {
 
     // remove all clients
-    char buffer[5] = "exit";
-	for (auto it = tcp_clients.begin(); it != tcp_clients.end(); it++) {
-        send((*it).second.socketfd, buffer, strlen(buffer), 0);
-	}
     for (int i = 0; i <= fdmax; i++) {
         FD_CLR(i, &read_fds);
         close(i);

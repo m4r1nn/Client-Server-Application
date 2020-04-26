@@ -1,4 +1,4 @@
-#include "./include/upd_client_helpers.h"
+#include "./include/udp_client_helpers.h"
 
 // for sending news
 void resolve_read_stdin(int sockfd, fd_set& read_fds, struct sockaddr_in& serv_addr) {
